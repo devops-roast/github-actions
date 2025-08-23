@@ -1,0 +1,34 @@
+---
+name: release-please
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_call:
+    inputs:
+      gh_app_id:
+        description: >-
+          The ID of the GitHub App used to interact with GitHub (e.g., cloning,
+          committing, pushing).
+        required: false
+        type: number
+        default: 1817613
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: generate token from github app
+        id: github_app
+        uses: getsentry/action-github-app-token@v3
+        with:
+          app_id: ${{ inputs.gh_app_id }}
+          private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
+
+      - name: run release-please action
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.github_app.outputs.token }}
+          release-type: simple
