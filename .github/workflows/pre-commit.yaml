@@ -1,0 +1,116 @@
+---
+name: pre-commit
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: write
+
+on:
+  workflow_call:
+    inputs:
+      auto_commit:
+        description: >-
+          Enables auto-commit of eventual fixups
+          (requires `permissions.contents: write` on the calling job)
+        required: false
+        type: boolean
+        default: false
+      gh_app_id:
+        description: >-
+          The ID of the GitHub App used to interact with GitHub (e.g., cloning,
+          committing, pushing).
+        required: false
+        type: number
+        default: 1817613
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    container:
+      image: devopsroastbot/mise:2025.8.20-alpine
+      credentials:
+        username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+        password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
+    steps:
+      - name: generate token from github app
+        id: github_app
+        uses: getsentry/action-github-app-token@v3
+        with:
+          app_id: ${{ inputs.gh_app_id }}
+          private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v5
+        env:
+          REF_TO_CHECKOUT: ${{ inputs.auto_commit == true && github.head_ref || '' }}
+        with:
+          ref: ${{ env.REF_TO_CHECKOUT }}
+          token: ${{ steps.github_app.outputs.token }}
+          fetch-depth: 0
+      - name: mark workspace directory as safe for git
+        # In recent versions of Git, some steps may fail with a "detected
+        # dubious ownership in repository" error. Marking the repository as a
+        # "safe" directory for Git resolves the issue. For more details, refer to the
+        # following discussion:
+        # - https://github.com/orgs/community/discussions/48355
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+      - name: add github.com to known hosts
+        # As of version 0.8.x, the `webfactory/ssh-agent` action no longer
+        # adds SSH key verification by default. However, SSH key verification
+        # is still needed when cloning a private pre-commit-hooks repository.
+        # For more details, see:
+        # - https://github.com/webfactory/ssh-agent/issues/174#issuecomment-1486300082
+        run: |
+          curl --silent -H "Authorization: Bearer ${{ steps.github_app.outputs.token }}" https://api.github.com/meta | \
+            jq --raw-output '"github.com " + .ssh_keys[]' >> /etc/ssh/ssh_known_hosts
+      - name: setup ssh for private pre-commit hooks
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PRE_COMMIT_HOOKS_REPO_DEPLOY_KEY }}
+      - name: cache mise dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/mise
+          key: mise-${{ runner.os }}-${{ hashFiles('mise.toml') }}
+      - name: mise install
+        run: |
+          mise install --yes
+      - name: cache pre-commit dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: run pre-commit on entire repository
+        run: |
+          commit_msg="$(git log --format=%B -n 1 ${{ github.event.after }})"
+          if grep -Fq "[skip pre-commit]" <<< "${commit_msg}"
+          then
+            echo "exit early since it's an autofix commit"
+            exit 0
+          else
+            pre-commit run --show-diff-on-failure --color=always --all-files
+          fi
+        id: pre_commit
+        shell: bash
+        env:
+          CONTINUE_ON_ERROR: ${{ inputs.auto_commit == true }}
+        continue-on-error: ${{ fromJSON(env.CONTINUE_ON_ERROR) }}
+      - name: auto fix changes reported by pre-commit
+        uses: stefanzweifel/git-auto-commit-action@e348103e9026cc0eee72ae06630dbe30c8bf7a79 # v5.1.0
+        id: auto_commit_action
+        if: inputs.auto_commit
+        with:
+          commit_message: "chore: auto fix changes reported by pre-commit [skip pre-commit]"
+      - name: re-throw potential pre-commit failure when no changes detected for auto fix
+        if: |
+          (
+            inputs.auto_commit && steps.pre_commit.outcome == 'failure' &&
+            steps.auto_commit_action.outputs.changes_detected == 'false'
+          )
+        run: |
+          echo "pre-commit failed and no changes detected to auto commit" && exit 1
+        shell: bash
