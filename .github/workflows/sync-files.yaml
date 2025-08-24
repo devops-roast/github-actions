@@ -1,0 +1,39 @@
+---
+name: sync-files
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_call:
+    inputs:
+      gh_app_id:
+        description: >-
+          The ID of the GitHub App used to interact with GitHub (e.g., cloning,
+          committing, pushing).
+        required: false
+        type: number
+        default: 1817613
+
+jobs:
+  sync-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: generate token from github app
+        id: github_app
+        uses: getsentry/action-github-app-token@v3
+        with:
+          app_id: ${{ inputs.gh_app_id }}
+          private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v5
+        with:
+          token: ${{ steps.github_app.outputs.token }}
+      - uses: wadackel/files-sync-action@v3
+        with:
+          github_token: ${{ steps.github_app.outputs.token }}
