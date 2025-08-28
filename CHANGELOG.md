@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/devops-roast/github-actions/compare/v1.0.0...v1.1.0) (2025-08-28)
+
+
+### Features
+
+* add sync-files ([bd8b994](https://github.com/devops-roast/github-actions/commit/bd8b994dda10bc4b4235aa3091bbe924337a08b6))
+
 ## 1.0.0 (2025-08-23)
 
 
