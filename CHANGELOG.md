@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/devops-roast/github-actions/compare/v1.1.0...v1.2.0) (2025-08-28)
+
+
+### Features
+
+* **deps:** update pre-commit to 4.3.0 ([#6](https://github.com/devops-roast/github-actions/issues/6)) ([129c3ed](https://github.com/devops-roast/github-actions/commit/129c3ed00c3230e29bd54b036bc9a6df37500739))
+* **gha:** pin dependencies ([#5](https://github.com/devops-roast/github-actions/issues/5)) ([a230b32](https://github.com/devops-roast/github-actions/commit/a230b32b84b911ccfcec9715a9cc4fecbf72af95))
+* **gha:** Update stefanzweifel/git-auto-commit-action action to v6.0.1 ([#7](https://github.com/devops-roast/github-actions/issues/7)) ([83c671f](https://github.com/devops-roast/github-actions/commit/83c671f50a2eba59a401ce05cca10367b115002a))
+
 ## [1.1.0](https://github.com/devops-roast/github-actions/compare/v1.0.0...v1.1.0) (2025-08-28)
 
 
