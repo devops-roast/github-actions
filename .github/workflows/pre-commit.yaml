@@ -31,19 +31,19 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     container:
-      image: devopsroastbot/mise:2025.8.20-alpine
+      image: devopsroastbot/mise:2025.8.20-alpine@sha256:3af00d5bcec3be143e054f4269e7a3c644c4cee2e25891208d04f21586b5a924
       credentials:
         username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
         password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
     steps:
       - name: generate token from github app
         id: github_app
-        uses: getsentry/action-github-app-token@v3
+        uses: getsentry/action-github-app-token@d4b5da6c5e37703f8c3b3e43abb5705b46e159cc # v3
         with:
           app_id: ${{ inputs.gh_app_id }}
           private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
       - name: checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         env:
           REF_TO_CHECKOUT: ${{ inputs.auto_commit == true && github.head_ref || '' }}
         with:
@@ -68,11 +68,11 @@ jobs:
           curl --silent -H "Authorization: Bearer ${{ steps.github_app.outputs.token }}" https://api.github.com/meta | \
             jq --raw-output '"github.com " + .ssh_keys[]' >> /etc/ssh/ssh_known_hosts
       - name: setup ssh for private pre-commit hooks
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
         with:
           ssh-private-key: ${{ secrets.PRE_COMMIT_HOOKS_REPO_DEPLOY_KEY }}
       - name: cache mise dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
           path: ~/.local/share/mise
           key: mise-${{ runner.os }}-${{ hashFiles('mise.toml') }}
@@ -80,7 +80,7 @@ jobs:
         run: |
           mise install --yes
       - name: cache pre-commit dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -100,7 +100,7 @@ jobs:
           CONTINUE_ON_ERROR: ${{ inputs.auto_commit == true }}
         continue-on-error: ${{ fromJSON(env.CONTINUE_ON_ERROR) }}
       - name: auto fix changes reported by pre-commit
-        uses: stefanzweifel/git-auto-commit-action@e348103e9026cc0eee72ae06630dbe30c8bf7a79 # v5.1.0
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5.2.0
         id: auto_commit_action
         if: inputs.auto_commit
         with:

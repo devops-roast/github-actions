@@ -22,13 +22,13 @@ jobs:
     steps:
       - name: generate token from github app
         id: github_app
-        uses: getsentry/action-github-app-token@v3
+        uses: getsentry/action-github-app-token@d4b5da6c5e37703f8c3b3e43abb5705b46e159cc # v3
         with:
           app_id: ${{ inputs.gh_app_id }}
           private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
 
       - name: run release-please action
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@c2a5a2bd6a758a0937f1ddb1e8950609867ed15c # v4
         with:
           token: ${{ steps.github_app.outputs.token }}
           release-type: simple
