@@ -27,13 +27,13 @@ jobs:
     steps:
       - name: generate token from github app
         id: github_app
-        uses: getsentry/action-github-app-token@v3
+        uses: getsentry/action-github-app-token@d4b5da6c5e37703f8c3b3e43abb5705b46e159cc # v3
         with:
           app_id: ${{ inputs.gh_app_id }}
           private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           token: ${{ steps.github_app.outputs.token }}
-      - uses: wadackel/files-sync-action@v3
+      - uses: wadackel/files-sync-action@95d12ea42e78723763c810a462bcacb4cc315994 # v3
         with:
           github_token: ${{ steps.github_app.outputs.token }}
