@@ -31,7 +31,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     container:
-      image: devopsroastbot/mise:2025.8.20-alpine@sha256:3af00d5bcec3be143e054f4269e7a3c644c4cee2e25891208d04f21586b5a924
+      image: devopsroastbot/mise:2025.8.20-alpine@sha256:3082759d2a2a68aa31c5941f4985481aa575a0d8c18098b4b02a2a28d5b84a83
       credentials:
         username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
         password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
