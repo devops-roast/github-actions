@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0](https://github.com/devops-roast/github-actions/compare/v1.2.0...v1.3.0) (2025-08-29)
+
+
+### Features
+
+* add `config` input for release-please-standard action ([ae69b7f](https://github.com/devops-roast/github-actions/commit/ae69b7f1d616d8402233a72fe6bdbd2fb104f9c4))
+* add `type` input for release-please-standard action ([2d86a1d](https://github.com/devops-roast/github-actions/commit/2d86a1d6feccdd7c314ba0f57210d95ffafcc01b))
+* add readme-weaver workflow ([89d3423](https://github.com/devops-roast/github-actions/commit/89d3423a9789e987736d670da6ae7cbe4b488a8c))
+* make release type empty by default ([5481fbe](https://github.com/devops-roast/github-actions/commit/5481fbe086700a3048b4109913e58427903fbc89))
+
 ## [1.2.0](https://github.com/devops-roast/github-actions/compare/v1.1.0...v1.2.0) (2025-08-28)
 
 
