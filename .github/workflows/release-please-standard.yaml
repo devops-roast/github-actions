@@ -21,7 +21,7 @@ on:
           See: https://github.com/googleapis/release-please?tab=readme-ov-file#strategy-language-types-supported
         required: false
         type: string
-        default: simple
+        default: ""
       config:
         description: >-
           The `release-please` compatible config file location within repository.
