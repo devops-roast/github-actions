@@ -1,0 +1,73 @@
+---
+name: readme-weaver
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: write
+
+on:
+  workflow_call:
+    inputs:
+      auto_commit:
+        description: >-
+          Enables auto-commit of README updates.
+          (requires `permissions.contents: write` on the calling job)
+        required: false
+        type: boolean
+        default: false
+      gh_app_id:
+        description: >-
+          The ID of the GitHub App used to interact with GitHub (e.g., cloning,
+          committing, pushing).
+        required: false
+        type: number
+        default: 1817613
+
+jobs:
+  readme-weaver:
+    runs-on: ubuntu-latest
+    steps:
+      - name: generate token from github app
+        id: github_app
+        uses: getsentry/action-github-app-token@d4b5da6c5e37703f8c3b3e43abb5705b46e159cc # v3
+        with:
+          app_id: ${{ inputs.gh_app_id }}
+          private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        env:
+          REF_TO_CHECKOUT: ${{ inputs.auto_commit == true && github.head_ref || '' }}
+        with:
+          ref: ${{ env.REF_TO_CHECKOUT }}
+          token: ${{ steps.github_app.outputs.token }}
+          fetch-depth: 0
+      - name: mark workspace directory as safe for git
+        # In recent versions of Git, some steps may fail with a "detected
+        # dubious ownership in repository" error. Marking the repository as a
+        # "safe" directory for Git resolves the issue. For more details, refer to the
+        # following discussion:
+        # - https://github.com/orgs/community/discussions/48355
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+      - name: checkout common markdown
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: devops-roast/.github
+          path: partials
+          ref: main
+      - name: run readme weaver
+        uses: devops-roast/readme-weaver@v0.1.1
+        env:
+          LOG_LEVEL: DEBUG
+          README_WEAVER_BASE: ./partials/common-markdown
+      - name: commit changes back
+        uses: stefanzweifel/git-auto-commit-action@778341af668090896ca464160c2def5d1d1a3eb0 # v6.0.1
+        id: auto_commit_action
+        if: inputs.auto_commit
+        with:
+          commit_message: "docs: auto-update with readme-weaver"
