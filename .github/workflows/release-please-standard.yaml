@@ -15,6 +15,13 @@ on:
         required: false
         type: number
         default: 1817613
+      type:
+        description: >-
+          The `release-please` compatible type of release.
+          See: https://github.com/googleapis/release-please?tab=readme-ov-file#strategy-language-types-supported
+        required: false
+        type: string
+        default: simple
 
 jobs:
   release-please:
@@ -31,4 +38,4 @@ jobs:
         uses: googleapis/release-please-action@c2a5a2bd6a758a0937f1ddb1e8950609867ed15c # v4
         with:
           token: ${{ steps.github_app.outputs.token }}
-          release-type: simple
+          release-type: ${{ inputs.type }}
