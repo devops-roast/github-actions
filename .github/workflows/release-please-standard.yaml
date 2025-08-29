@@ -22,6 +22,12 @@ on:
         required: false
         type: string
         default: simple
+      config:
+        description: >-
+          The `release-please` compatible config file location within repository.
+        required: false
+        type: string
+        default: ""
 
 jobs:
   release-please:
@@ -39,3 +45,4 @@ jobs:
         with:
           token: ${{ steps.github_app.outputs.token }}
           release-type: ${{ inputs.type }}
+          config-file: ${{ inputs.config }}
