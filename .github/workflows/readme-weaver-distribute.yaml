@@ -1,0 +1,139 @@
+---
+name: readme-weaver-distribute
+
+# Weaves the common markdown partials into the README of every readme-weaver
+# subscriber and opens (or updates) a pull request wherever the README changes.
+# Meant to run in devops-roast/.github whenever a partial changes, so subscribers
+# do not have to wait for their next pull request to pick it up.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: >-
+          Path (in the calling repository) to the files-sync configuration.
+          Subscribers are the repositories of every pattern that syncs
+          `.github/workflows/readme-weaver.yaml`, so subscribing a repository
+          for the readme-weaver workflow also subscribes it for distribution.
+        required: false
+        type: string
+        default: .github/files-sync-config.yaml
+      partials_ref:
+        description: >-
+          The devops-roast/.github ref (branch, tag or SHA) to take the
+          partials from.
+        required: false
+        type: string
+        default: main
+      reviewers:
+        description: >-
+          Comma-separated list of users requested to review the pull requests.
+        required: false
+        type: string
+        default: shmileee
+      gh_app_id:
+        description: >-
+          The ID of the GitHub App used to interact with GitHub (e.g., cloning,
+          committing, pushing).
+        required: false
+        type: number
+        default: 1817613
+
+jobs:
+  subscribers:
+    runs-on: ubuntu-latest
+    outputs:
+      repositories: ${{ steps.subscribers.outputs.repositories }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - name: list subscribers
+        id: subscribers
+        env:
+          CONFIG: ${{ inputs.config }}
+        run: |
+          # `owner/repo@branch` targets are reduced to `owner/repo`; the
+          # pull request always goes to the default branch.
+          repositories="$(
+            yq -o=json -I=0 '[
+              .patterns[]
+              | select(.files[] | select(tag == "!!map") | .to == ".github/workflows/readme-weaver.yaml")
+              | .repositories[]
+              | sub("@.*$"; "")
+            ] | unique' "${CONFIG}"
+          )"
+          echo "subscribers: ${repositories}"
+          echo "repositories=${repositories}" >> "${GITHUB_OUTPUT}"
+
+  distribute:
+    needs: subscribers
+    if: needs.subscribers.outputs.repositories != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repository: ${{ fromJSON(needs.subscribers.outputs.repositories) }}
+    steps:
+      - name: generate token from github app
+        id: github_app
+        uses: getsentry/action-github-app-token@d4b5da6c5e37703f8c3b3e43abb5705b46e159cc # v3
+        with:
+          app_id: ${{ inputs.gh_app_id }}
+          private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
+      - name: checkout subscriber
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          repository: ${{ matrix.repository }}
+          token: ${{ steps.github_app.outputs.token }}
+      - name: checkout common markdown
+        # Same layout as the readme-weaver workflow: a hidden directory keeps
+        # the partials repository's own markdown out of the scan.
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          repository: devops-roast/.github
+          ref: ${{ inputs.partials_ref }}
+          path: .readme-weaver-partials
+      - name: exclude common markdown from git
+        run: |
+          echo "/.readme-weaver-partials/" >> .git/info/exclude
+      - name: run readme weaver
+        uses: devops-roast/readme-weaver@v0.1.2
+        env:
+          LOG_LEVEL: INFO
+          README_WEAVER_BASE: ./.readme-weaver-partials/common-markdown
+      - name: open pull request
+        id: pull_request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.github_app.outputs.token }}
+          sign-commits: true
+          branch: readme-weaver/sync-partials
+          delete-branch: true
+          commit-message: "docs: sync readme partials from `devops-roast/.github`"
+          title: "docs: sync readme partials from `devops-roast/.github`"
+          body: |
+            Weaves the latest partials from [`devops-roast/.github`](https://github.com/devops-roast/.github/tree/${{ inputs.partials_ref }}/common-markdown) (`${{ inputs.partials_ref }}`) into this repository's markdown.
+
+            Opened by the [readme-weaver-distribute](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow. Subsequent partial changes update this pull request.
+          labels: auto-sync
+          reviewers: ${{ inputs.reviewers }}
+      - name: enable auto-merge
+        if: contains(fromJSON('["created", "updated"]'), steps.pull_request.outputs.pull-request-operation)
+        env:
+          GH_TOKEN: ${{ steps.github_app.outputs.token }}
+          PULL_REQUEST_URL: ${{ steps.pull_request.outputs.pull-request-url }}
+        run: |
+          # Merges once the required checks pass and the pull request is
+          # approved, like the files-sync pull requests.
+          if [ "$(gh pr view "${PULL_REQUEST_URL}" --json autoMergeRequest --jq '.autoMergeRequest != null')" = "true" ]; then
+            echo "auto-merge is already enabled for ${PULL_REQUEST_URL}"
+          else
+            gh pr merge --auto --squash "${PULL_REQUEST_URL}"
+          fi
