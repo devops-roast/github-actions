@@ -77,6 +77,11 @@ jobs:
           path: ~/.local/share/mise
           key: mise-${{ runner.os }}-${{ hashFiles('mise.toml') }}
       - name: mise install
+        # mise resolves tool versions through the GitHub API. Without a token
+        # it shares the runner's anonymous rate limit (60 requests/hour) and
+        # fails with "403 rate limit exceeded".
+        env:
+          GITHUB_TOKEN: ${{ steps.github_app.outputs.token }}
         run: |
           mise install --yes
       - name: cache pre-commit dependencies
