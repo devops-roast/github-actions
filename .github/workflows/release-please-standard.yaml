@@ -28,14 +28,6 @@ on:
         required: false
         type: string
         default: ""
-      auto_merge:
-        description: >-
-          Enables auto-merge (squash) on the release pull request, so it is
-          merged, and the release published, as soon as the required checks
-          pass. Draft release pull requests are marked as ready first.
-        required: false
-        type: boolean
-        default: true
 
 jobs:
   release-please:
@@ -49,31 +41,8 @@ jobs:
           private_key: ${{ secrets.DEVOPS_ROAST_BOT_GH_APP_PRIVATE_KEY }}
 
       - name: run release-please action
-        id: release
         uses: googleapis/release-please-action@c2a5a2bd6a758a0937f1ddb1e8950609867ed15c # v4
         with:
           token: ${{ steps.github_app.outputs.token }}
           release-type: ${{ inputs.type }}
           config-file: ${{ inputs.config }}
-
-      - name: enable auto-merge for release pull requests
-        # The merge is performed by the GitHub App, so the resulting push to
-        # the default branch triggers this workflow again, which then tags and
-        # publishes the release.
-        if: inputs.auto_merge && steps.release.outputs.prs_created == 'true'
-        env:
-          GH_TOKEN: ${{ steps.github_app.outputs.token }}
-          PRS: ${{ steps.release.outputs.prs }}
-        run: |
-          for number in $(jq -r '.[].number' <<< "${PRS}"); do
-            state="$(gh pr view "${number}" --repo "${GITHUB_REPOSITORY}" --json isDraft,autoMergeRequest \
-              --jq '"\(.isDraft) \(.autoMergeRequest != null)"')"
-            if [ "${state% *}" = "true" ]; then
-              gh pr ready "${number}" --repo "${GITHUB_REPOSITORY}"
-            fi
-            if [ "${state#* }" = "true" ]; then
-              echo "auto-merge is already enabled for #${number}"
-            else
-              gh pr merge "${number}" --repo "${GITHUB_REPOSITORY}" --auto --squash
-            fi
-          done
