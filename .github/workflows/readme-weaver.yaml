@@ -54,17 +54,27 @@ jobs:
         run: |
           git config --global --add safe.directory "$(pwd)"
       - name: checkout common markdown
-        uses: actions/checkout@v5
+        # The partials must live inside the workspace so the readme-weaver
+        # container can read them. A hidden directory keeps them out of
+        # readme-weaver's `**/*.md` scan; otherwise the include directives in
+        # the `.github` repository's own README are processed and fail to
+        # resolve.
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: devops-roast/.github
-          path: partials
+          path: .readme-weaver-partials
           ref: main
+      - name: exclude common markdown from git
+        # Without this, the auto-commit step would add the partials checkout
+        # to the calling repository as an embedded git repository (gitlink).
+        run: |
+          echo "/.readme-weaver-partials/" >> .git/info/exclude
       - name: run readme weaver
         uses: devops-roast/readme-weaver@v0.1.1
         env:
           LOG_LEVEL: DEBUG
-          README_WEAVER_BASE: ./partials/common-markdown
+          README_WEAVER_BASE: ./.readme-weaver-partials/common-markdown
       - name: commit changes back
         uses: stefanzweifel/git-auto-commit-action@778341af668090896ca464160c2def5d1d1a3eb0 # v6.0.1
         id: auto_commit_action
