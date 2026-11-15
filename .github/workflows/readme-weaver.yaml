@@ -71,7 +71,7 @@ jobs:
         run: |
           echo "/.readme-weaver-partials/" >> .git/info/exclude
       - name: run readme weaver
-        uses: devops-roast/readme-weaver@fix/mdformat-stable-output-and-code-fences
+        uses: devops-roast/readme-weaver@v0.1.2
         env:
           LOG_LEVEL: DEBUG
           README_WEAVER_BASE: ./.readme-weaver-partials/common-markdown
