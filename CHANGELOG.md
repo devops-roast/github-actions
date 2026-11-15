@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/devops-roast/github-actions/compare/v1.3.0...v1.3.1) (2026-11-15)
+
+
+### Reverts
+
+* auto-merge release-please pull requests ([#17](https://github.com/devops-roast/github-actions/issues/17)) ([fc97d59](https://github.com/devops-roast/github-actions/commit/fc97d59b55a5919a5f572c0deea81a8f72bf620d))
+
 ## [1.3.0](https://github.com/devops-roast/github-actions/compare/v1.2.0...v1.3.0) (2026-11-15)
 
 
