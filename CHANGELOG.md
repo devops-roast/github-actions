@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/devops-roast/github-actions/compare/v1.2.0...v1.3.0) (2026-11-15)
+
+
+### Features
+
+* add `config` input for release-please-standard action ([ae69b7f](https://github.com/devops-roast/github-actions/commit/ae69b7f1d616d8402233a72fe6bdbd2fb104f9c4))
+* add `type` input for release-please-standard action ([2d86a1d](https://github.com/devops-roast/github-actions/commit/2d86a1d6feccdd7c314ba0f57210d95ffafcc01b))
+* add readme-weaver workflow ([89d3423](https://github.com/devops-roast/github-actions/commit/89d3423a9789e987736d670da6ae7cbe4b488a8c))
+* auto-merge release-please pull requests ([#16](https://github.com/devops-roast/github-actions/issues/16)) ([b2e9c2c](https://github.com/devops-roast/github-actions/commit/b2e9c2cccc1e6ef858b36f13a1651974a06507c6))
+* make release type empty by default ([5481fbe](https://github.com/devops-roast/github-actions/commit/5481fbe086700a3048b4109913e58427903fbc89))
+
+
+### Bug Fixes
+
+* authenticate mise against the GitHub API in pre-commit ([#14](https://github.com/devops-roast/github-actions/issues/14)) ([d07726d](https://github.com/devops-roast/github-actions/commit/d07726db28cc709c221e67edcce4016a5edb55b1))
+* keep readme-weaver partials out of the scan and the auto-commit ([#13](https://github.com/devops-roast/github-actions/issues/13)) ([9f26089](https://github.com/devops-roast/github-actions/commit/9f26089cb4c1ba7addf72e5d8e322ae3c2035763))
+
 ## [1.2.0](https://github.com/devops-roast/github-actions/compare/v1.1.0...v1.2.0) (2025-08-28)
 
 
